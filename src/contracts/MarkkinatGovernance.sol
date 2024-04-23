@@ -39,11 +39,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     IERC721 private markkinatNFT;
     uint256 private idsAllowedToVoted;
 
-    constructor(
-        address nftAddress,
-        uint16 _quorum,
-        address initialOwner
-    ) payable Ownable(initialOwner) {
+    constructor(address nftAddress, uint16 _quorum, address initialOwner) payable Ownable(initialOwner) {
         quorum = _quorum;
         markkinatNFT = IERC721(nftAddress);
     }
@@ -63,10 +59,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     // Create a modifier which only allows a function to be
     // called if the given proposal's deadline has not been exceeded yet
     modifier activeProposalOnly(uint256 proposalIndex) {
-        require(
-            proposals[proposalIndex].deadLine >= block.timestamp,
-            "DEADLINE_EXCEEDED"
-        );
+        require(proposals[proposalIndex].deadLine >= block.timestamp, "DEADLINE_EXCEEDED");
         _;
     }
 
@@ -74,28 +67,25 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     // called if the given proposals' deadline HAS been exceeded
     // and if the proposal has not yet been executed
     modifier inactiveProposalOnly(uint256 proposalId) {
-        require(
-            proposals[proposalId].deadLine <= block.timestamp,
-            "DEADLINE_NOT_EXCEEDED"
-        );
-        require(
-            proposals[proposalId].executed == false,
-            "PROPOSAL_ALREADY_EXECUTED"
-        );
+        require(proposals[proposalId].deadLine <= block.timestamp, "DEADLINE_NOT_EXCEEDED");
+        require(proposals[proposalId].executed == false, "PROPOSAL_ALREADY_EXECUTED");
         _;
     }
 
-    modifier canParticipateInProposal(uint256 _tokenId){
-//        require(markkinatNFT.ownerOf(_tokenId) == msg.sender, "Not owner of this asset");
+    modifier tokenIdAllowedToVote(uint256 _tokenId) {
+        //        require();
+        // TODO: ensure that the tokenId provided is allowed to vote.
+        require(_tokenId <= idsAllowedToVoted, "The provided asset is not allowed to vote");
+        _;
+    }
+
+    modifier canParticipateInProposal(uint256 _tokenId) {
+        //        require(markkinatNFT.ownerOf(_tokenId) == msg.sender, "Not owner of this asset");
         require(_tokenId <= idsAllowedToVoted, "Provided asset not allowed to participate in proposal or Vote");
         _;
     }
 
-    function createProposal(
-        string memory _name,
-        uint256 _deadLine,
-        string memory desc
-    ) external onlyNftHolder {
+    function createProposal(string memory _name, uint256 _deadLine, string memory desc) external onlyNftHolder {
         require(bytes(_name).length > 0, "Proposal name cannot be empty");
         require(bytes(desc).length > 0, "Proposal description cannot be empty");
         uint256 proposalId = proposalCount++;
@@ -107,36 +97,35 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         proposal.deadLine = block.timestamp + _deadLine;
     }
 
-    function voteOnProposal(uint256 proposalId, VoterDecision decision, uint256 _tokenId) external activeProposalOnly(proposalId){
+    function voteOnProposal(uint256 proposalId, VoterDecision decision, uint256 _tokenId)
+        external
+        activeProposalOnly(proposalId)
+        tokenIdAllowedToVote(_tokenId)
+    {
         Proposal storage proposal = proposals[proposalId];
         require(proposal.voter[_tokenId] == false, "ALREADY_VOTED");
-        if(decision == VoterDecision.For){
+        if (decision == VoterDecision.For) {
             proposal.forProposal++;
-        }
-        else if (decision == VoterDecision.Against){
+        } else if (decision == VoterDecision.Against) {
             proposal.againstProposal++;
-        }
-        else {
+        } else {
             proposal.abstainProposal++;
         }
         proposal.votes++;
         proposal.voter[_tokenId] = true;
     }
 
-    function executeProposal(uint256 proposalId) external inactiveProposalOnly(proposalId){
+    function executeProposal(uint256 proposalId) external inactiveProposalOnly(proposalId) {
         Proposal storage proposal = proposals[proposalId];
-        if(proposal.forProposal >= quorum){
+        if (proposal.forProposal >= quorum) {
             // running
         }
-
         proposal.executed = true;
     }
 
-    function delegateVotingPower(address _delegate, uint256 _tokenId) external {
+    function delegateVotingPower(address _delegate, uint256 _tokenId) external {}
 
-    }
-
-    function updateAllowedIdToVote(uint256 num) external onlyOwner{
+    function updateAllowedIdToVote(uint256 num) external onlyOwner {
         idsAllowedToVoted = num;
     }
 
@@ -154,5 +143,4 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     receive() external payable {}
 
     fallback() external payable {}
-
 }
