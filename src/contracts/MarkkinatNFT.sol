@@ -42,7 +42,7 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      */
     function startPresale() public onlyOwner {
         presaleStarted = true;
-        // Set presaleEnded time as current timestamp + 5 minutes
+        // Set presaleEnded time as current timestamp + 30 minutes
         // Solidity has cool syntax for timestamps (seconds, minutes, hours, days, years)
         presaleEnded = block.timestamp + 30 minutes;
     }
