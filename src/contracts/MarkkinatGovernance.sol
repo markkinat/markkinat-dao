@@ -113,6 +113,9 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         Proposal storage proposal = proposals[proposalId];
         bool value = delegatedTo[proposalId][msg.sender];
 
+        tokenVoted[proposalId][_tokenId] = true;
+        hasVoted[proposalId][msg.sender] = true;
+
         if (decision == VoterDecision.For) {
             if (value) {
                 proposal.forProposal += 2;
@@ -139,8 +142,6 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         } else {
             proposal.votes++;
         }
-        tokenVoted[proposalId][_tokenId] = true;
-        hasVoted[proposalId][msg.sender] = true;
         //        proposal.voter[_tokenId] = true;
     }
 
