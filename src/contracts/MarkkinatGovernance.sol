@@ -42,6 +42,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     mapping (uint => mapping (uint => bool)) private tokenVoted;
     mapping (uint => mapping(uint => bool)) private delegatedBefore;
     mapping (uint => mapping (address => bool)) private delegatedTo;
+    mapping (uint => mapping (address => uint)) private delegatedToTokenId;
     mapping (uint => mapping (address => mapping (uint => bool))) private delegatedVote;
 
     constructor(address nftAddress, uint16 _quorum, address initialOwner) payable Ownable(initialOwner) {
@@ -136,6 +137,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         require(!tokenVoted[proposalId][_tokenId], "Cannot assigned already voted asset");
         delegatedVote[proposalId][_delegate][_tokenId] = true;
         delegatedTo[proposalId][_delegate] = true;
+        delegatedToTokenId[proposalId][_delegate] = _tokenId;
     }
 
     function updateAllowedIdToVote(uint256 num) external onlyOwner {
