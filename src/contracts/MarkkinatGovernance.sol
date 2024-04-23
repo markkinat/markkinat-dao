@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "src/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 
 contract MarkkinatGovernance is Ownable {
     struct Proposal {
@@ -33,22 +32,24 @@ contract MarkkinatGovernance is Ownable {
     }
 
     uint16 private quorum;
-    address payable private owner;
     mapping(uint256 => Proposal) private proposals;
     mapping(address => Delegate) private delegate;
     uint256 private proposalCount;
-    IERC721 private nftContract;
+    IERC721 private markkinatNFT;
 
-    constructor(address nftAddress, uint16 _quorum) payable {
+    constructor(
+        address nftAddress,
+        uint16 _quorum,
+        address initialOwner
+    ) payable Ownable(initialOwner) {
         quorum = _quorum;
-        owner = payable(msg.sender);
-        nftContract = IERC721(nftAddress);
+        markkinatNFT = IERC721(nftAddress);
     }
 
     modifier onlyNftHolder() {
         bool status;
         for (uint8 i = 1; i <= 20; i++) {
-            if (nftContract.ownerOf(i) == msg.sender) {
+            if (markkinatNFT.ownerOf(i) == msg.sender) {
                 status = true;
                 break;
             }
