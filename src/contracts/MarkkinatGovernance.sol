@@ -64,7 +64,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     // called if the given proposal's deadline has not been exceeded yet
     modifier activeProposalOnly(uint256 proposalIndex) {
         require(
-            proposals[proposalIndex].deadLine > block.timestamp,
+            proposals[proposalIndex].deadLine >= block.timestamp,
             "DEADLINE_EXCEEDED"
         );
         _;
@@ -107,7 +107,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         proposal.deadLine = block.timestamp + _deadLine;
     }
 
-    function voteOnProposal(uint256 proposalId, VoterDecision decision) external activeProposal(proposalId){
+    function voteOnProposal(uint256 proposalId, VoterDecision decision, uint256 _tokenId) external activeProposalOnly(proposalId){
         Proposal storage proposal = proposals[proposalId];
         require(proposal.voter[_tokenId] == false, "ALREADY_VOTED");
         if(decision == VoterDecision.For){
