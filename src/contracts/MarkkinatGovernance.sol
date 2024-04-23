@@ -123,8 +123,13 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         proposal.voter[_tokenId] = true;
     }
 
-    function executeProposal(uint256 proposalId) external {
+    function executeProposal(uint256 proposalId) external inactiveProposalOnly(proposalId){
+        Proposal storage proposal = proposals[proposalId];
+        if(proposal.forProposal >= quorum){
+            // running
+        }
 
+        proposal.executed = true;
     }
 
     function delegateVotingPower(address _delegate, uint256 _tokenId) external {
