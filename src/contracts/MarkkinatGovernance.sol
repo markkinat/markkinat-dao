@@ -45,6 +45,10 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     mapping(uint => mapping (address => bool)) private hasVoted;
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) private delegatedVote;
 
+    event ProposalCreated(uint256 indexed, address indexed);
+    event VotedSuccessfully(uint256 indexed, address, VoterDecision);
+    event DelegatedVotingPowerSuccessfully(address, uint256, address);
+
     constructor(address nftAddress, uint16 _quorum, address initialOwner) payable Ownable(initialOwner) {
         quorum = _quorum;
         markkinatNFT = IERC721(nftAddress);
@@ -98,6 +102,8 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         proposal.name = _name;
         proposal.description = desc;
         proposal.deadLine = block.timestamp + _deadLine;
+
+        emit ProposalCreated(proposalId, msg.sender);
     }
 
     // TODO: user decision on the Proposal created.
@@ -143,6 +149,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
             proposal.votes++;
         }
         //        proposal.voter[_tokenId] = true;
+        emit VotedSuccessfully(proposalId, msg.sender, decision);
     }
 
     // @dev: this is yet to be decided fully on what the decision of what need to be done.
@@ -174,6 +181,8 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         delegatedBefore[proposalId][_tokenId] = true;
         delegatedTo[proposalId][_delegate] = true;
         delegatedToTokenId[proposalId][_delegate] = _tokenId;
+
+        emit DelegatedVotingPowerSuccessfully(msg.sender, proposalId, _delegate);
     }
 
     function updateAllowedIdToVote(uint256 num) external onlyOwner {
