@@ -107,11 +107,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         proposal.deadLine = block.timestamp + _deadLine;
     }
 
-    function voteOnProposal(
-        uint256 proposalId,
-        VoterDecision decision,
-        uint256 _tokenId
-    ) external activeProposalOnly(proposalId) nonReentrant canParticipateInProposal(_tokenId){
+    function voteOnProposal(uint256 proposalId, VoterDecision decision) external activeProposal(proposalId){
         Proposal storage proposal = proposals[proposalId];
         require(proposal.voter[_tokenId] == false, "ALREADY_VOTED");
         if(decision == VoterDecision.For){
