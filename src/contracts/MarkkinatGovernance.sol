@@ -77,9 +77,7 @@ contract MarkkinatGovernance is Ownable {
 
     function executeProposal() external {}
 
-    function withdrawEther(uint256 _amount) external {}
-
-    function updateQuorum(uint16 _quorum) external {
+    function updateQuorum(uint16 _quorum) external onlyOwner {
         quorum = _quorum;
     }
 
