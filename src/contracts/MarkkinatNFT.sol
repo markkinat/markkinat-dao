@@ -76,7 +76,7 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
         for (i = 0; i < 21; i++) {
             _safeMint(msg.sender, i);
         }
-        tokenIds += 21;
+        tokenIds = 21;
         nftReserved = true;
     }
 
