@@ -78,6 +78,8 @@ contract MarkkinatGovernance is Ownable {
 
     function executeProposal() external {}
 
+    function delegateVotingPower(address _delegate, uint256 _tokenId) external {}
+
     function updateQuorum(uint16 _quorum) external onlyOwner {
         quorum = _quorum;
     }
