@@ -33,7 +33,9 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
     constructor(
         string memory baseURI,
         address initialOwner
-    ) ERC721("Markkinat DAO", "MKNDAO") Ownable(initialOwner) {}
+    ) ERC721("Markkinat DAO", "MKNDAO") Ownable(initialOwner) {
+        _baseTokenURI = baseURI;
+    }
 
     bool public saleIsActive = false;
 
