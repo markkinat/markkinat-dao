@@ -52,7 +52,6 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      */
     function presaleMint() public payable onlyWhenNotPaused {
         require(nftReserved, "Markkinat not reserved");
-        tokenIds = 20;
         require(
             presaleStarted && block.timestamp < presaleEnded,
             "Presale is not running"
@@ -77,6 +76,7 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
         for (i = 0; i < 21; i++) {
             _safeMint(msg.sender, i);
         }
+        tokenIds += 21;
         nftReserved = true;
     }
 
