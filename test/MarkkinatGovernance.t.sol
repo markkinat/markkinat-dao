@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
@@ -6,6 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import "forge-std/Script.sol";
 import "../src/contracts/MarkkinatGovernance.sol";
 import "../src/contracts/MarkkinatNFT.sol";
+import "src/libraries/MarkkinatLibrary.sol";
 
 contract MarkkinatNFTTest is Test {
     struct Proposal {
@@ -21,6 +21,7 @@ contract MarkkinatNFTTest is Test {
         uint256 votes;
         bool executed;
     }
+
     MarkkinatGovernance private markkinatGovernance;
     MarkkinatNFT private markkinatNFT;
 
@@ -39,35 +40,56 @@ contract MarkkinatNFTTest is Test {
     }
 
     function testCreateProposal() external {
-        switchSigner(owner);
-        markkinatNFT.reserveMarkkinat();
+        runOwnerDuty();
 
         markkinatGovernance.createProposal("name", (3 minutes), "desc");
-        (, string memory name, , address _creator,,,,,, bool executed ) = markkinatGovernance.proposals(1);
-        console.log("result is ",name);
+        (, string memory name,, address _creator,,,,,, bool executed) = markkinatGovernance.proposals(1);
+        console.log("result is ", name);
         assertEq(name, "name");
         assertEq(_creator, owner);
         assertFalse(executed);
     }
 
-    function testOnlyRareAssetHolderCanCreateProposal() external{
-        switchSigner(owner);
-        markkinatNFT.reserveMarkkinat();
+    function testOnlyRareAssetHolderCanCreateProposal() external {
+        runOwnerDuty();
         markkinatNFT.startPresale();
 
         switchSigner(B);
         vm.warp(5.5 minutes);
         markkinatNFT.mint{value: 0.01 ether}();
         vm.expectRevert("must own the very rare asset to create a proposal");
-        markkinatGovernance.createProposal("name", 1 minutes, "desc");  
+        markkinatGovernance.createProposal("name", 1 minutes, "desc");
     }
 
-    function testDeadLineMustBeGreaterThanCurrentTime() external{
-        switchSigner(owner);
-        markkinatNFT.reserveMarkkinat();
+    function testDeadLineMustBeGreaterThanCurrentTime() external {
+        runOwnerDuty();
         vm.warp(10 minutes);
         vm.expectRevert("Deadline must be greater than current time");
         markkinatGovernance.createProposal("name", 5 minutes, "desc");
+    }
+
+    function testVoteOnProposal() external {
+        runOwnerDuty();
+        markkinatNFT.safeTransferFrom(owner, B, 2);
+        markkinatNFT.safeTransferFrom(owner, C, 3);
+        markkinatNFT.safeTransferFrom(owner, D, 4);
+
+        switchSigner(B);
+        markkinatGovernance.createProposal("name", 10 minutes, "desc");
+
+        switchSigner(C);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 3);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 4);
+
+        (, string memory name,, address _creator, uint256 forProps,,,, uint256 total, bool executed) =
+            markkinatGovernance.proposals(1);
+        assertEq(forProps, 1);
+        assertEq(total, 2);
+    }
+
+    function runOwnerDuty() private {
+        switchSigner(owner);
+        markkinatNFT.reserveMarkkinat();
     }
 
     function switchSigner(address _newSigner) public {
@@ -81,9 +103,7 @@ contract MarkkinatNFTTest is Test {
     }
 
     function mkaddr(string memory name) public returns (address) {
-        address addr = address(
-            uint160(uint256(keccak256(abi.encodePacked(name))))
-        );
+        address addr = address(uint160(uint256(keccak256(abi.encodePacked(name)))));
         vm.label(addr, name);
         return addr;
     }

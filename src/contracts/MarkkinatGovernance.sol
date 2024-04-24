@@ -5,9 +5,9 @@ import "src/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {Test, console} from "forge-std/Test.sol";
+import "src/libraries/MarkkinatLibrary.sol";
 
 contract MarkkinatGovernance is Ownable, ReentrancyGuard {
-
     struct Proposal {
         uint256 proposalId;
         string name;
@@ -28,27 +28,26 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     //        address delegate;
     //    }
 
-    enum VoterDecision {
-        Abstain,
-        Against,
-        For
-    }
+    //    enum VoterDecision {
+    //        Abstain,
+    //        Against,
+    //        For
+    //    }
 
     uint16 public quorum;
     mapping(uint256 => Proposal) public proposals;
-    //    mapping(address => Delegate) private delegate;
     uint256 private proposalCount;
     IERC721 private markkinatNFT;
-    uint256 private idsAllowedToVoted;
+    uint256 private idsAllowedToVoted = 100;
     mapping(uint256 => mapping(uint256 => bool)) private tokenVoted;
     mapping(uint256 => mapping(uint256 => bool)) private delegatedBefore;
     mapping(uint256 => mapping(address => bool)) private delegatedTo;
     mapping(uint256 => mapping(address => uint256)) private delegatedToTokenId;
-    mapping(uint => mapping (address => bool)) private hasVoted;
+    mapping(uint256 => mapping(address => bool)) private hasVoted;
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) private delegatedVote;
 
     event ProposalCreated(uint256 indexed, address indexed);
-    event VotedSuccessfully(uint256 indexed, address, VoterDecision);
+    event VotedSuccessfully(uint256 indexed, address, MarkkinatLibrary.VoterDecision);
     event DelegatedVotingPowerSuccessfully(address, uint256, address);
 
     constructor(address nftAddress, uint16 _quorum, address initialOwner) payable Ownable(initialOwner) {
@@ -110,7 +109,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
 
     // TODO: user decision on the Proposal created.
     // @dev: there is need to change the weight of votes which will be gotten from the Asset contract
-    function voteOnProposal(uint256 proposalId, VoterDecision decision, uint256 _tokenId)
+    function voteOnProposal(uint256 proposalId, MarkkinatLibrary.VoterDecision decision, uint256 _tokenId)
         external
         activeProposalOnly(proposalId)
         tokenIdAllowedToVote(_tokenId)
@@ -124,21 +123,24 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         tokenVoted[proposalId][_tokenId] = true;
         hasVoted[proposalId][msg.sender] = true;
 
-        if (decision == VoterDecision.For) {
+        if (decision == MarkkinatLibrary.VoterDecision.For) {
             if (value) {
                 proposal.forProposal += 2;
+            } else {
+                proposal.forProposal++;
             }
-            else proposal.forProposal++;
-        } else if (decision == VoterDecision.Against) {
+        } else if (decision == MarkkinatLibrary.VoterDecision.Against) {
             if (value) {
                 proposal.againstProposal += 2;
+            } else {
+                proposal.againstProposal++;
             }
-            else proposal.againstProposal++;
         } else {
             if (value) {
                 proposal.abstainProposal += 2;
+            } else {
+                proposal.againstProposal++;
             }
-            else proposal.againstProposal++;
         }
 
         if (value) {

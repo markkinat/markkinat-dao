@@ -50,14 +50,8 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      */
     function presaleMint() public payable onlyWhenNotPaused {
         require(nftReserved, "Markkinat not reserved");
-        require(
-            presaleStarted && block.timestamp < presaleEnded,
-            "Presale is not running"
-        );
-        require(
-            tokenIds < maxTokenIds,
-            "Exceeded maximum Markkinat Collection supply"
-        );
+        require(presaleStarted && block.timestamp < presaleEnded, "Presale is not running");
+        require(tokenIds < maxTokenIds, "Exceeded maximum Markkinat Collection supply");
         require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
         //_safeMint is a safer version of the _mint function as it ensures that
