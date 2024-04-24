@@ -99,6 +99,7 @@ contract MarkkinatNFTTest is Test {
     }
 
     function testDelegateVotingPower() external {
+        transferAssets();
         
     }
 
