@@ -69,27 +69,33 @@ contract MarkkinatNFTTest is Test {
     }
 
     function testVoteOnProposal() external {
-        runOwnerDuty();
-        markkinatNFT.safeTransferFrom(owner, B, 2);
-        markkinatNFT.safeTransferFrom(owner, C, 3);
-        markkinatNFT.safeTransferFrom(owner, D, 4);
-
+        transferAssets();
         switchSigner(B);
         markkinatGovernance.createProposal("name", 10 minutes, "desc");
 
         switchSigner(C);
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 3);
+        vm.expectRevert("User already voted");
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 4);
 
         (, string memory name,, address _creator, uint256 forProps,,,, uint256 total, bool executed) =
             markkinatGovernance.proposals(1);
         assertEq(forProps, 1);
-        assertEq(total, 2);
+        assertEq(total, 1);
     }
+
+//    function testVoteOnProposal
 
     function runOwnerDuty() private {
         switchSigner(owner);
         markkinatNFT.reserveMarkkinat();
+    }
+
+    function transferAssets() private {
+        runOwnerDuty();
+        markkinatNFT.safeTransferFrom(owner, B, 2);
+        markkinatNFT.safeTransferFrom(owner, C, 3);
+        markkinatNFT.safeTransferFrom(owner, D, 4);
     }
 
     function switchSigner(address _newSigner) public {

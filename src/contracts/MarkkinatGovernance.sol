@@ -116,6 +116,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         nonReentrant
     {
         require(!tokenVoted[proposalId][_tokenId], "has already voted...");
+        require(!hasVoted[proposalId][msg.sender], "User already voted");
 
         Proposal storage proposal = proposals[proposalId];
         bool value = delegatedTo[proposalId][msg.sender];
