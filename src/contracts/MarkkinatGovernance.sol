@@ -21,18 +21,6 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         bool executed;
     }
 
-    //    struct Delegate {
-    //        uint256 tokenId;
-    //        uint256 proposalId;
-    //        address delegate;
-    //    }
-
-//    enum VoterDecision {
-//        Abstain,
-//        Against,
-//        For
-//    }
-
     uint16 public quorum;
     mapping(uint256 => Proposal) public proposals;
     //    mapping(address => Delegate) private delegate;
