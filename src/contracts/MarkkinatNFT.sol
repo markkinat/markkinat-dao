@@ -11,7 +11,7 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      * token will be the concatenation of the `baseURI` and the `tokenId`.
      */
     string _baseTokenURI;
-    uint256 private tokenIds = 20;
+    uint256 private tokenIds;
 
     //  _price is the price of one Markkinat Dev NFT
     uint256 public _price = 0.01 ether;

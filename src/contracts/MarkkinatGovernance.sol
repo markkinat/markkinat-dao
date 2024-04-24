@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "src/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "src/libraries/MarkkinatLibrary.sol";
 
 contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     struct Proposal {
@@ -26,18 +27,18 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     //        address delegate;
     //    }
 
-    enum VoterDecision {
-        Abstain,
-        Against,
-        For
-    }
+//    enum VoterDecision {
+//        Abstain,
+//        Against,
+//        For
+//    }
 
     uint16 public quorum;
-    mapping(uint256 => Proposal) private proposals;
+    mapping(uint256 => Proposal) public proposals;
     //    mapping(address => Delegate) private delegate;
     uint256 private proposalCount;
     IERC721 private markkinatNFT;
-    uint256 private idsAllowedToVoted;
+    uint256 private idsAllowedToVoted = 100;
     mapping(uint256 => mapping(uint256 => bool)) private tokenVoted;
     mapping(uint256 => mapping(uint256 => bool)) private delegatedBefore;
     mapping(uint256 => mapping(address => bool)) private delegatedTo;
@@ -46,7 +47,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) private delegatedVote;
 
     event ProposalCreated(uint256 indexed, address indexed);
-    event VotedSuccessfully(uint256 indexed, address, VoterDecision);
+    event VotedSuccessfully(uint256 indexed, address, MarkkinatLibrary.VoterDecision);
     event DelegatedVotingPowerSuccessfully(address, uint256, address);
 
     constructor(address nftAddress, uint16 _quorum, address initialOwner) payable Ownable(initialOwner) {
@@ -95,7 +96,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         require(bytes(_name).length > 0, "Proposal name cannot be empty");
         require(bytes(desc).length > 0, "Proposal description cannot be empty");
         require(_deadLine > block.timestamp, "Deadline must be greater than current time");
-        uint256 proposalId = proposalCount++;
+        uint256 proposalId = ++proposalCount;
         Proposal storage proposal = proposals[proposalId];
         proposal.proposalId = proposalId;
         proposal.creator = msg.sender;
@@ -108,7 +109,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
 
     // TODO: user decision on the Proposal created.
     // @dev: there is need to change the weight of votes which will be gotten from the Asset contract
-    function voteOnProposal(uint256 proposalId, VoterDecision decision, uint256 _tokenId)
+    function voteOnProposal(uint256 proposalId, MarkkinatLibrary.VoterDecision decision, uint256 _tokenId)
         external
         activeProposalOnly(proposalId)
         tokenIdAllowedToVote(_tokenId)
@@ -127,9 +128,9 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         hasVoted[proposalId][msg.sender] = true;
 
         // Update vote counts based on decision and delegation
-        if (decision == VoterDecision.For) {
+        if (decision == MarkkinatLibrary.VoterDecision.For) {
             proposal.forProposal += isDelegated ? 2 : 1;
-        } else if (decision == VoterDecision.Against) {
+        } else if (decision == MarkkinatLibrary.VoterDecision.Against) {
             proposal.againstProposal += isDelegated ? 2 : 1;
         } else {
             proposal.abstainProposal += isDelegated ? 2 : 1;
