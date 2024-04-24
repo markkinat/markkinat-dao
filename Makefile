@@ -21,6 +21,10 @@ test-nft:
 	@echo "Testing fix..."
 	@forge t --match-path test/MarkkinatNFT.t.sol -vv
 
+test-nft-verbose:
+	@echo "Testing fix..."
+	@forge t --match-path test/MarkkinatNFT.t.sol -vvvv
+
 
 
 
