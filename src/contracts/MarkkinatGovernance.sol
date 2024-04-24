@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "src/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     struct Proposal {
@@ -42,14 +42,19 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => bool)) private delegatedBefore;
     mapping(uint256 => mapping(address => bool)) private delegatedTo;
     mapping(uint256 => mapping(address => uint256)) private delegatedToTokenId;
-    mapping(uint => mapping (address => bool)) private hasVoted;
-    mapping(uint256 => mapping(address => mapping(uint256 => bool))) private delegatedVote;
+    mapping(uint => mapping(address => bool)) private hasVoted;
+    mapping(uint256 => mapping(address => mapping(uint256 => bool)))
+        private delegatedVote;
 
     event ProposalCreated(uint256 indexed, address indexed);
     event VotedSuccessfully(uint256 indexed, address, VoterDecision);
     event DelegatedVotingPowerSuccessfully(address, uint256, address);
 
-    constructor(address nftAddress, uint16 _quorum, address initialOwner) payable Ownable(initialOwner) {
+    constructor(
+        address nftAddress,
+        uint16 _quorum,
+        address initialOwner
+    ) payable Ownable(initialOwner) {
         quorum = _quorum;
         markkinatNFT = IERC721(nftAddress);
     }
@@ -69,7 +74,10 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     // Create a modifier which only allows a function to be
     // called if the given proposal's deadline has not been exceeded yet
     modifier activeProposalOnly(uint256 proposalIndex) {
-        require(proposals[proposalIndex].deadLine >= block.timestamp, "DEADLINE_EXCEEDED");
+        require(
+            proposals[proposalIndex].deadLine >= block.timestamp,
+            "DEADLINE_EXCEEDED"
+        );
         _;
     }
 
@@ -77,24 +85,40 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     // called if the given proposals' deadline HAS been exceeded
     // and if the proposal has not yet been executed
     modifier inactiveProposalOnly(uint256 proposalId) {
-        require(proposals[proposalId].deadLine <= block.timestamp, "DEADLINE_NOT_EXCEEDED");
-        require(proposals[proposalId].executed == false, "PROPOSAL_ALREADY_EXECUTED");
+        require(
+            proposals[proposalId].deadLine <= block.timestamp,
+            "DEADLINE_NOT_EXCEEDED"
+        );
+        require(
+            proposals[proposalId].executed == false,
+            "PROPOSAL_ALREADY_EXECUTED"
+        );
         _;
     }
 
     modifier tokenIdAllowedToVote(uint256 _tokenId) {
-        //        require();
+        //  require();
         // TODO: ensure that the tokenId provided is allowed to vote.
-        require(_tokenId <= idsAllowedToVoted, "The provided asset is not allowed to vote");
+        require(
+            _tokenId <= idsAllowedToVoted,
+            "The provided asset is not allowed to vote"
+        );
         _;
     }
 
     // TODO: create a proposal
     // @dev: there is a need to take an extra argument which is to perform the action of the marketPlace contract...
-    function createProposal(string memory _name, uint256 _deadLine, string memory desc) external onlyNftHolder {
+    function createProposal(
+        string memory _name,
+        uint256 _deadLine,
+        string memory desc
+    ) external onlyNftHolder {
         require(bytes(_name).length > 0, "Proposal name cannot be empty");
         require(bytes(desc).length > 0, "Proposal description cannot be empty");
-        require(_deadLine > block.timestamp, "Deadline must be greater than current time");
+        require(
+            _deadLine > block.timestamp,
+            "Deadline must be greater than current time"
+        );
         uint256 proposalId = proposalCount++;
         Proposal storage proposal = proposals[proposalId];
         proposal.proposalId = proposalId;
@@ -108,42 +132,47 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
 
     // TODO: user decision on the Proposal created.
     // @dev: there is need to change the weight of votes which will be gotten from the Asset contract
-    function voteOnProposal(uint256 proposalId, VoterDecision decision, uint256 _tokenId)
+    function voteOnProposal(
+        uint256 proposalId,
+        VoterDecision decision,
+        uint256 _tokenId
+    )
         external
         activeProposalOnly(proposalId)
         tokenIdAllowedToVote(_tokenId)
         nonReentrant
     {
-        require(!tokenVoted[proposalId][_tokenId], "has already voted...");
+        // Check if voter has already voted on this proposal (combined check)
+        require(
+            !tokenVoted[proposalId][_tokenId] &&
+                !hasVoted[proposalId][msg.sender],
+            "Already voted on this proposal"
+        );
 
         Proposal storage proposal = proposals[proposalId];
-        bool value = delegatedTo[proposalId][msg.sender];
+        bool isDelegated = delegatedTo[proposalId][msg.sender];
 
+        // Update token and user voting flags
         tokenVoted[proposalId][_tokenId] = true;
         hasVoted[proposalId][msg.sender] = true;
 
+        // Update vote counts based on decision and delegation
         if (decision == VoterDecision.For) {
-            if (value) {
-                proposal.forProposal += 2;
-            }
-            else proposal.forProposal++;
+            proposal.forProposal += isDelegated ? 2 : 1;
         } else if (decision == VoterDecision.Against) {
-            if (value) {
-                proposal.againstProposal += 2;
-            }
-            else proposal.againstProposal++;
+            proposal.againstProposal += isDelegated ? 2 : 1;
         } else {
-            if (value) {
-                proposal.abstainProposal += 2;
-            }
-            else proposal.againstProposal++;
+            proposal.abstainProposal += isDelegated ? 2 : 1;
         }
 
-        if (value) {
-            uint256 id = delegatedToTokenId[proposalId][msg.sender];
-            address realOwner = markkinatNFT.ownerOf(id);
+        // Handle delegated vote (if applicable)
+        if (isDelegated) {
+            uint256 delegatedTokenId = delegatedToTokenId[proposalId][
+                msg.sender
+            ];
+            address realOwner = markkinatNFT.ownerOf(delegatedTokenId);
             proposal.votes += 2;
-            tokenVoted[proposalId][id] = true;
+            tokenVoted[proposalId][delegatedTokenId] = true;
             hasVoted[proposalId][realOwner] = true;
         } else {
             proposal.votes++;
@@ -153,36 +182,61 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     }
 
     // @dev: this is yet to be decided fully on what the decision of what need to be done.
-    function executeProposal(uint256 proposalId) external inactiveProposalOnly(proposalId) {
+    function executeProposal(
+        uint256 proposalId
+    ) external inactiveProposalOnly(proposalId) {
         Proposal storage proposal = proposals[proposalId];
         if (
-            proposal.forProposal >= quorum && proposal.forProposal > proposal.againstProposal
-                && proposal.forProposal > proposal.abstainProposal
+            proposal.forProposal >= quorum &&
+            proposal.forProposal > proposal.againstProposal &&
+            proposal.forProposal > proposal.abstainProposal
         ) {
             // running
         }
         proposal.executed = true;
     }
 
-    function delegateVotingPower(address _delegate, uint256 _tokenId, uint256 proposalId)
-        external
-        activeProposalOnly(proposalId)
-        tokenIdAllowedToVote(_tokenId)
-    {
-        require(markkinatNFT.ownerOf(_tokenId) == msg.sender, "Only owner can be allowed to perform this action");
-        require(_delegate != address(0), "Cannot delegate vote to an address zero");
+    function delegateVotingPower(
+        address _delegate,
+        uint256 _tokenId,
+        uint256 proposalId
+    ) external activeProposalOnly(proposalId) tokenIdAllowedToVote(_tokenId) {
+        require(
+            markkinatNFT.ownerOf(_tokenId) == msg.sender,
+            "Only owner can be allowed to perform this action"
+        );
+        require(
+            _delegate != address(0),
+            "Cannot delegate vote to an address zero"
+        );
         require(!delegatedBefore[proposalId][_tokenId], "already delegated");
-        require(!tokenVoted[proposalId][_tokenId], "Cannot assigned already voted asset");
-        require(!delegatedTo[proposalId][_delegate], "Recipient cannot be assigned more than one delegate");
-        require(!hasVoted[proposalId][msg.sender], "Already voted cannot delegate vote");
-        require(!hasVoted[proposalId][_delegate], "Already voted cannot accept delegate vote");
+        require(
+            !tokenVoted[proposalId][_tokenId],
+            "Cannot assigned already voted asset"
+        );
+        require(
+            !delegatedTo[proposalId][_delegate],
+            "Recipient cannot be assigned more than one delegate"
+        );
+        require(
+            !hasVoted[proposalId][msg.sender],
+            "Already voted cannot delegate vote"
+        );
+        require(
+            !hasVoted[proposalId][_delegate],
+            "Already voted cannot accept delegate vote"
+        );
 
         delegatedVote[proposalId][_delegate][_tokenId] = true;
         delegatedBefore[proposalId][_tokenId] = true;
         delegatedTo[proposalId][_delegate] = true;
         delegatedToTokenId[proposalId][_delegate] = _tokenId;
 
-        emit DelegatedVotingPowerSuccessfully(msg.sender, proposalId, _delegate);
+        emit DelegatedVotingPowerSuccessfully(
+            msg.sender,
+            proposalId,
+            _delegate
+        );
     }
 
     function updateAllowedIdToVote(uint256 num) external onlyOwner {
