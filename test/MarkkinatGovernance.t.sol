@@ -88,10 +88,8 @@ contract MarkkinatNFTTest is Test {
         switchSigner(E);
         markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 5);
 
-        (,,,, uint256 forProps,,,, uint256 total, bool executed) =
-                            markkinatGovernance.proposals(1);
-        (,,,,,uint against, ,, uint256 total1,) =
-                            markkinatGovernance.proposals(2);
+        (,,,, uint256 forProps,,,, uint256 total,) = markkinatGovernance.proposals(1);
+        (,,,,,uint against, ,, uint256 total1,) = markkinatGovernance.proposals(2);
 
         assertEq(forProps, 0);
         assertEq(total, 1);
@@ -100,7 +98,9 @@ contract MarkkinatNFTTest is Test {
         assertEq(total1, 3);
     }
 
-//    function testVoteOnProposal
+    function testDelegateVotingPower() external {
+        
+    }
 
     function runOwnerDuty() private {
         switchSigner(owner);
