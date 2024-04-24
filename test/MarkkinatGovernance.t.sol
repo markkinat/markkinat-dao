@@ -8,19 +8,6 @@ import "../src/contracts/MarkkinatNFT.sol";
 import "src/libraries/MarkkinatLibrary.sol";
 
 contract MarkkinatNFTTest is Test {
-    struct Proposal {
-        uint256 proposalId;
-        string name;
-        string description;
-        address creator;
-        uint256 forProposal;
-        uint256 againstProposal;
-        uint256 abstainProposal;
-        mapping(uint256 => bool) voter;
-        uint256 deadLine;
-        uint256 votes;
-        bool executed;
-    }
 
     MarkkinatGovernance private markkinatGovernance;
     MarkkinatNFT private markkinatNFT;
@@ -29,6 +16,7 @@ contract MarkkinatNFTTest is Test {
     address B = address(0xb);
     address C = address(0xc);
     address D = address(0xd);
+    address E = address(0xe);
 
     function setUp() public {
         markkinatNFT = new MarkkinatNFT("baseURI", owner);
@@ -37,6 +25,7 @@ contract MarkkinatNFTTest is Test {
         fundUserEth(B);
         fundUserEth(C);
         fundUserEth(D);
+        fundUserEth(E);
     }
 
     function testCreateProposal() external {
@@ -84,6 +73,33 @@ contract MarkkinatNFTTest is Test {
         assertEq(total, 1);
     }
 
+    function testVoteOnDifferentProposals() external{
+        transferAssets();
+        switchSigner(B);
+        markkinatGovernance.createProposal("name", 10 minutes, "desc");
+        markkinatGovernance.createProposal("name1", 10 minutes, "desc");
+
+        switchSigner(C);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 3);
+        markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 3);
+
+        switchSigner(D);
+        markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 4);
+        switchSigner(E);
+        markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 5);
+
+        (,,,, uint256 forProps,,,, uint256 total, bool executed) =
+                            markkinatGovernance.proposals(1);
+        (,,,,,uint against, ,, uint256 total1,) =
+                            markkinatGovernance.proposals(2);
+
+        assertEq(forProps, 0);
+        assertEq(total, 1);
+
+        assertEq(against, 3);
+        assertEq(total1, 3);
+    }
+
 //    function testVoteOnProposal
 
     function runOwnerDuty() private {
@@ -96,6 +112,7 @@ contract MarkkinatNFTTest is Test {
         markkinatNFT.safeTransferFrom(owner, B, 2);
         markkinatNFT.safeTransferFrom(owner, C, 3);
         markkinatNFT.safeTransferFrom(owner, D, 4);
+        markkinatNFT.safeTransferFrom(owner, E, 5);
     }
 
     function switchSigner(address _newSigner) public {
