@@ -107,7 +107,7 @@ contract MarkkinatNFTTest is Test {
         switchSigner(C);
 
         //wrrite a loop to run 99 time siwtching signner and public mint
-        for (uint i = 1; i < 80; i++) {
+        for (uint256 i = 1; i < 80; i++) {
             // console.log("current iteration", i);
             fundUserEth(C);
 
@@ -133,9 +133,7 @@ contract MarkkinatNFTTest is Test {
     }
 
     function mkaddr(string memory name) public returns (address) {
-        address addr = address(
-            uint160(uint256(keccak256(abi.encodePacked(name))))
-        );
+        address addr = address(uint160(uint256(keccak256(abi.encodePacked(name)))));
         vm.label(addr, name);
         return addr;
     }
