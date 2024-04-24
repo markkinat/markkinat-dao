@@ -35,16 +35,14 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
         _baseTokenURI = baseURI;
     }
 
-    bool public saleIsActive = false;
-
     /**
      * @dev startPresale starts a presale for the whitelisted addresses
      */
     function startPresale() public onlyOwner {
         presaleStarted = true;
-        // Set presaleEnded time as current timestamp + 30 minutes
+        // Set presaleEnded time as current timestamp + 5 minutes
         // Solidity has cool syntax for timestamps (seconds, minutes, hours, days, years)
-        presaleEnded = block.timestamp + 30 minutes;
+        presaleEnded = block.timestamp + 5 minutes;
     }
 
     /**
@@ -52,9 +50,15 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      */
     function presaleMint() public payable onlyWhenNotPaused {
         require(nftReserved, "Markkinat not reserved");
-        require(presaleStarted && block.timestamp < presaleEnded, "Presale is not running");
-        require(tokenIds < maxTokenIds, "Exceeded maximum Markkinat Collection supply");
-        // require(msg.value >= _price, "Ether sent is not correct");
+        require(
+            presaleStarted && block.timestamp < presaleEnded,
+            "Presale is not running"
+        );
+        require(
+            tokenIds < maxTokenIds,
+            "Exceeded maximum Markkinat Collection supply"
+        );
+        require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
         //_safeMint is a safer version of the _mint function as it ensures that
         // if the address being minted to is a contract, then it knows how to deal with ERC721 tokens
@@ -107,6 +111,14 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      */
     function withdrawEther() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
+    }
+
+    /**
+     * @dev Get balance of the ether in the contract
+     *
+     */
+    function checkContractBal() external view returns (uint256) {
+        return address(this).balance;
     }
 
     // Function to receive Ether. msg.data must be empty
