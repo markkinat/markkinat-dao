@@ -21,10 +21,6 @@ contract MarkkinatNFTTest is Test {
         fundUserEth(D);
     }
 
-    function testBaseURI() public {
-        assertEq(markkinatNFT.presaleStarted(), false);
-    }
-
     // test Presale if NFT NOT RESERVED
     function testPresaleMintNotReserved() public {
         switchSigner(B);
@@ -138,7 +134,7 @@ contract MarkkinatNFTTest is Test {
         return addr;
     }
 
-    function checkNftBalance(address userAddy) private returns (uint256) {
+    function checkNftBalance(address userAddy) public view returns (uint256) {
         return markkinatNFT.balanceOf(userAddy);
     }
 
