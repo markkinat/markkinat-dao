@@ -8,7 +8,6 @@ import "../src/contracts/MarkkinatNFT.sol";
 import "src/libraries/MarkkinatLibrary.sol";
 
 contract MarkkinatNFTTest is Test {
-
     MarkkinatGovernance private markkinatGovernance;
     MarkkinatNFT private markkinatNFT;
 
@@ -68,12 +67,12 @@ contract MarkkinatNFTTest is Test {
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 4);
 
         (, string memory name,, address _creator, uint256 forProps,,,, uint256 total, bool executed) =
-                            markkinatGovernance.proposals(1);
+            markkinatGovernance.proposals(1);
         assertEq(forProps, 1);
         assertEq(total, 1);
     }
 
-    function testVoteOnDifferentProposals() external{
+    function testVoteOnDifferentProposals() external {
         transferAssets();
         switchSigner(B);
         markkinatGovernance.createProposal("name", 10 minutes, "desc");
@@ -89,7 +88,7 @@ contract MarkkinatNFTTest is Test {
         markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 5);
 
         (,,,, uint256 forProps,,,, uint256 total,) = markkinatGovernance.proposals(1);
-        (,,,,,uint against, ,, uint256 total1,) = markkinatGovernance.proposals(2);
+        (,,,,, uint256 against,,, uint256 total1,) = markkinatGovernance.proposals(2);
 
         assertEq(forProps, 0);
         assertEq(total, 1);
@@ -101,6 +100,26 @@ contract MarkkinatNFTTest is Test {
     function testDelegateVotingPower() external {
         transferAssets();
 
+        switchSigner(B);
+        markkinatGovernance.createProposal("name", 5 minutes, "desc");
+
+        switchSigner(C);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 3);
+
+        switchSigner(D);
+        vm.expectRevert("Already voted cannot accept delegate vote");
+        markkinatGovernance.delegateVotingPower(C, 4, 1);
+
+        markkinatGovernance.delegateVotingPower(E, 4, 1);
+
+        switchSigner(E);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 5);
+
+        (,,,, uint256 forProps, uint256 against,,, uint256 total,) = markkinatGovernance.proposals(1);
+
+        assertEq(forProps, 1);
+        assertEq(against, 2);
+        assertEq(total, 3);
     }
 
     function runOwnerDuty() private {
