@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "src/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     struct Proposal {
@@ -42,7 +42,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => bool)) private delegatedBefore;
     mapping(uint256 => mapping(address => bool)) private delegatedTo;
     mapping(uint256 => mapping(address => uint256)) private delegatedToTokenId;
-    mapping(uint => mapping (address => bool)) private hasVoted;
+    mapping(uint256 => mapping(address => bool)) private hasVoted;
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) private delegatedVote;
 
     event ProposalCreated(uint256 indexed, address indexed);
@@ -83,7 +83,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     }
 
     modifier tokenIdAllowedToVote(uint256 _tokenId) {
-        //        require();
+        //  require();
         // TODO: ensure that the tokenId provided is allowed to vote.
         require(_tokenId <= idsAllowedToVoted, "The provided asset is not allowed to vote");
         _;
@@ -114,36 +114,33 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         tokenIdAllowedToVote(_tokenId)
         nonReentrant
     {
-        require(!tokenVoted[proposalId][_tokenId], "has already voted...");
+        // Check if voter has already voted on this proposal (combined check)
+        require(
+            !tokenVoted[proposalId][_tokenId] && !hasVoted[proposalId][msg.sender], "Already voted on this proposal"
+        );
 
         Proposal storage proposal = proposals[proposalId];
-        bool value = delegatedTo[proposalId][msg.sender];
+        bool isDelegated = delegatedTo[proposalId][msg.sender];
 
+        // Update token and user voting flags
         tokenVoted[proposalId][_tokenId] = true;
         hasVoted[proposalId][msg.sender] = true;
 
+        // Update vote counts based on decision and delegation
         if (decision == VoterDecision.For) {
-            if (value) {
-                proposal.forProposal += 2;
-            }
-            else proposal.forProposal++;
+            proposal.forProposal += isDelegated ? 2 : 1;
         } else if (decision == VoterDecision.Against) {
-            if (value) {
-                proposal.againstProposal += 2;
-            }
-            else proposal.againstProposal++;
+            proposal.againstProposal += isDelegated ? 2 : 1;
         } else {
-            if (value) {
-                proposal.abstainProposal += 2;
-            }
-            else proposal.againstProposal++;
+            proposal.abstainProposal += isDelegated ? 2 : 1;
         }
 
-        if (value) {
-            uint256 id = delegatedToTokenId[proposalId][msg.sender];
-            address realOwner = markkinatNFT.ownerOf(id);
+        // Handle delegated vote (if applicable)
+        if (isDelegated) {
+            uint256 delegatedTokenId = delegatedToTokenId[proposalId][msg.sender];
+            address realOwner = markkinatNFT.ownerOf(delegatedTokenId);
             proposal.votes += 2;
-            tokenVoted[proposalId][id] = true;
+            tokenVoted[proposalId][delegatedTokenId] = true;
             hasVoted[proposalId][realOwner] = true;
         } else {
             proposal.votes++;
