@@ -4,8 +4,10 @@ pragma solidity ^0.8.20;
 import "src/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 contract MarkkinatGovernance is Ownable, ReentrancyGuard {
+
     struct Proposal {
         uint256 proposalId;
         string name;
@@ -33,7 +35,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     }
 
     uint16 public quorum;
-    mapping(uint256 => Proposal) private proposals;
+    mapping(uint256 => Proposal) public proposals;
     //    mapping(address => Delegate) private delegate;
     uint256 private proposalCount;
     IERC721 private markkinatNFT;
@@ -95,7 +97,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         require(bytes(_name).length > 0, "Proposal name cannot be empty");
         require(bytes(desc).length > 0, "Proposal description cannot be empty");
         require(_deadLine > block.timestamp, "Deadline must be greater than current time");
-        uint256 proposalId = proposalCount++;
+        uint256 proposalId = ++proposalCount;
         Proposal storage proposal = proposals[proposalId];
         proposal.proposalId = proposalId;
         proposal.creator = msg.sender;
