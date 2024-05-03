@@ -5,9 +5,13 @@ fork-sepolia:
 	@anvil --fork-url ${SEPOLIA_RPC_URL}
 
 
-deploy-sepolia:
+deploy-nft-sepolia:
 	@echo "Deploying to sepolia..."
-	@forge script ./script/MarkkinatDeploy.s.sol --rpc-url ${SEPOLIA_RPC_URL}  --broadcast --private-key ${PRIVATE_KEY} --etherscan-api-key ${ETHERSCAN_KEY} --verify -vvvvv
+	@forge script ./script/MarkkinatNFTDeploy.s.sol --rpc-url ${SEPOLIA_RPC_URL}  --broadcast --private-key ${PRIVATE_KEY} --etherscan-api-key ${ETHERSCAN_KEY} --verify -vvvvv
+
+deploy-dao-sepolia:
+	@echo "Deploying to sepolia..."
+	@forge script ./script/MarkkinatDAODeploy.s.sol --rpc-url ${SEPOLIA_RPC_URL}  --broadcast --private-key ${PRIVATE_KEY} --etherscan-api-key ${ETHERSCAN_KEY} --verify -vvvvv
 
 test-dao:
 	@echo "Testing fix..."
