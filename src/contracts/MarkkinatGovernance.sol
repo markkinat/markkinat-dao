@@ -7,6 +7,12 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "src/libraries/MarkkinatLibrary.sol";
 
 contract MarkkinatGovernance is Ownable, ReentrancyGuard {
+    enum Executed{
+        PENDING,
+        DISCARDED,
+        ACTIVE,
+        EXECUTED
+    }
     struct Proposal {
         uint256 proposalId;
         string name;
@@ -18,7 +24,8 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         mapping(uint256 => bool) voter;
         uint256 deadLine;
         uint256 votes;
-        bool executed;
+        bool isExecuted;
+        Executed executed;
     }
 
     uint16 public quorum;
@@ -67,7 +74,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     // and if the proposal has not yet been executed
     modifier inactiveProposalOnly(uint256 proposalId) {
         require(proposals[proposalId].deadLine <= block.timestamp, "DEADLINE_NOT_EXCEEDED");
-        require(proposals[proposalId].executed == false, "PROPOSAL_ALREADY_EXECUTED");
+        require(proposals[proposalId].isExecuted == false, "PROPOSAL_ALREADY_EXECUTED");
         _;
     }
 
@@ -138,16 +145,27 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         emit VotedSuccessfully(proposalId, msg.sender, decision);
     }
 
-    // @dev: this is yet to be decided fully on what the decision of what need to be done.
-    function executeProposal(uint256 proposalId) external inactiveProposalOnly(proposalId) {
+    function activateProposal(uint256 proposalId) external onlyNftHolder inactiveProposalOnly(proposalId) {
         Proposal storage proposal = proposals[proposalId];
         if (
             proposal.forProposal >= quorum && proposal.forProposal > proposal.againstProposal
                 && proposal.forProposal > proposal.abstainProposal
-        ) {
-            // running
+        ){
+            proposal.executed = Executed.ACTIVE;
         }
-        proposal.executed = true;
+        else proposal.executed = Executed.DISCARDED;
+    }
+
+    // @dev: this is yet to be decided fully on what the decision of what need to be done.
+    function executeProposal(uint256 proposalId) external onlyNftHolder inactiveProposalOnly(proposalId) {
+        Proposal storage proposal = proposals[proposalId];
+        if (
+            !proposal.isExecuted && proposal.executed == Executed.ACTIVE
+        ) {
+            proposal.isExecuted = true;
+            proposal.executed = Executed.EXECUTED;
+        }
+        else revert("proposal not activated.");
     }
 
     function delegateVotingPower(address _delegate, uint256 _tokenId, uint256 proposalId)

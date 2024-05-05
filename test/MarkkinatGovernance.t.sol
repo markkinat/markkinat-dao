@@ -31,9 +31,10 @@ contract MarkkinatNFTTest is Test {
         runOwnerDuty();
 
         markkinatGovernance.createProposal("name", (3 minutes), "desc");
-        (, string memory name,, address _creator,,,,,, bool executed) = markkinatGovernance.proposals(1);
+        (, string memory name,, address _creator,,,,,, bool executed, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
         console.log("result is ", name);
         assertEq(name, "name");
+        assertTrue(v == MarkkinatGovernance.Executed.PENDING);
         assertEq(_creator, owner);
         assertFalse(executed);
     }
@@ -66,7 +67,7 @@ contract MarkkinatNFTTest is Test {
         vm.expectRevert("Already voted on this proposal");
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 4);
 
-        (,,,, uint256 forProps,,,, uint256 total,) =
+        (,,,, uint256 forProps,,,, uint256 total,,) =
             markkinatGovernance.proposals(1);
         assertEq(forProps, 1);
         assertEq(total, 1);
@@ -87,8 +88,8 @@ contract MarkkinatNFTTest is Test {
         switchSigner(E);
         markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 5);
 
-        (,,,, uint256 forProps,,,, uint256 total,) = markkinatGovernance.proposals(1);
-        (,,,,, uint256 against,,, uint256 total1,) = markkinatGovernance.proposals(2);
+        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (,,,,, uint256 against,,, uint256 total1,,) = markkinatGovernance.proposals(2);
 
         assertEq(forProps, 0);
         assertEq(total, 1);
@@ -115,7 +116,7 @@ contract MarkkinatNFTTest is Test {
         switchSigner(E);
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 5);
 
-        (,,,, uint256 forProps, uint256 against,,, uint256 total,) = markkinatGovernance.proposals(1);
+        (,,,, uint256 forProps, uint256 against,,, uint256 total,,) = markkinatGovernance.proposals(1);
 
         assertEq(forProps, 1);
         assertEq(against, 2);
