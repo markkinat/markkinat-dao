@@ -58,7 +58,7 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
                 break;
             }
         }
-        require(status, "must own the very rare asset to create a proposal");
+        require(status, "must own the very rare asset to perform action");
         _;
     }
 
