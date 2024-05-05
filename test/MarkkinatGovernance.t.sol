@@ -7,7 +7,7 @@ import "../src/contracts/MarkkinatGovernance.sol";
 import "../src/contracts/MarkkinatNFT.sol";
 import "src/libraries/MarkkinatLibrary.sol";
 
-contract MarkkinatNFTTest is Test {
+contract MarkkinatGovernanceTest is Test {
     MarkkinatGovernance private markkinatGovernance;
     MarkkinatNFT private markkinatNFT;
 
@@ -16,6 +16,7 @@ contract MarkkinatNFTTest is Test {
     address C = address(0xc);
     address D = address(0xd);
     address E = address(0xe);
+    address OO = address(0xaa1);
 
     function setUp() public {
         markkinatNFT = new MarkkinatNFT("baseURI", owner);
@@ -25,15 +26,17 @@ contract MarkkinatNFTTest is Test {
         fundUserEth(C);
         fundUserEth(D);
         fundUserEth(E);
+        fundUserEth(OO);
     }
 
     function testCreateProposal() external {
         runOwnerDuty();
 
         markkinatGovernance.createProposal("name", (3 minutes), "desc");
-        (, string memory name,, address _creator,,,,,, bool executed) = markkinatGovernance.proposals(1);
+        (, string memory name,, address _creator,,,,,, bool executed, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
         console.log("result is ", name);
         assertEq(name, "name");
+        assertTrue(v == MarkkinatGovernance.Executed.PENDING);
         assertEq(_creator, owner);
         assertFalse(executed);
     }
@@ -45,7 +48,7 @@ contract MarkkinatNFTTest is Test {
         switchSigner(B);
         vm.warp(5.5 minutes);
         markkinatNFT.mint{value: 0.01 ether}();
-        vm.expectRevert("must own the very rare asset to create a proposal");
+        vm.expectRevert("must own the very rare asset to perform action");
         markkinatGovernance.createProposal("name", 1 minutes, "desc");
     }
 
@@ -66,7 +69,7 @@ contract MarkkinatNFTTest is Test {
         vm.expectRevert("Already voted on this proposal");
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 4);
 
-        (, string memory name,, address _creator, uint256 forProps,,,, uint256 total, bool executed) =
+        (,,,, uint256 forProps,,,, uint256 total,,) =
             markkinatGovernance.proposals(1);
         assertEq(forProps, 1);
         assertEq(total, 1);
@@ -87,8 +90,8 @@ contract MarkkinatNFTTest is Test {
         switchSigner(E);
         markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 5);
 
-        (,,,, uint256 forProps,,,, uint256 total,) = markkinatGovernance.proposals(1);
-        (,,,,, uint256 against,,, uint256 total1,) = markkinatGovernance.proposals(2);
+        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (,,,,, uint256 against,,, uint256 total1,,) = markkinatGovernance.proposals(2);
 
         assertEq(forProps, 0);
         assertEq(total, 1);
@@ -115,11 +118,63 @@ contract MarkkinatNFTTest is Test {
         switchSigner(E);
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 5);
 
-        (,,,, uint256 forProps, uint256 against,,, uint256 total,) = markkinatGovernance.proposals(1);
+        (,,,, uint256 forProps, uint256 against,,, uint256 total,,) = markkinatGovernance.proposals(1);
 
         assertEq(forProps, 1);
         assertEq(against, 2);
         assertEq(total, 3);
+    }
+
+    function testActivateProposal() external {
+        transferAssets();
+        switchSigner(B);
+        markkinatGovernance.createProposal("name", 5 minutes, "desc");
+
+        vm.warp(11 minutes);
+        switchSigner(C);
+        markkinatGovernance.activateProposal(1);
+
+        (,,,,,,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
+        assertTrue(v == MarkkinatGovernance.Executed.DISCARDED);
+    }
+
+    function testAgainActivateProposal() external {
+        switchSigner(owner);
+        markkinatNFT.startPresale();
+        transferAssets();
+
+        vm.warp(6 minutes);
+        switchSigner(OO);
+        markkinatNFT.mint{value: 0.02 ether}();
+        
+        switchSigner(B);
+        markkinatGovernance.createProposal("name", 10 minutes, "desc");
+
+        switchSigner(D);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 4);
+        switchSigner(OO);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 21);
+        switchSigner(E);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 5);
+        switchSigner(B);
+        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 2);
+        
+        switchSigner(OO);
+        vm.expectRevert("must own the very rare asset to perform action");
+        markkinatGovernance.activateProposal(1);
+
+        vm.warp(20 minutes);
+        switchSigner(C);
+        markkinatGovernance.activateProposal(1);
+
+        (,,,,,,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
+
+        assertTrue(v == MarkkinatGovernance.Executed.ACTIVE);
+
+        switchSigner(C);
+        markkinatGovernance.executeProposal(1);
+        (,,,,,,,,,, MarkkinatGovernance.Executed vv) = markkinatGovernance.proposals(1);
+        assertTrue(vv == MarkkinatGovernance.Executed.EXECUTED);
     }
 
     function runOwnerDuty() private {
