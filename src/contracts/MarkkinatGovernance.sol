@@ -24,9 +24,9 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     uint16 public quorum;
     mapping(uint256 => Proposal) public proposals;
     //    mapping(address => Delegate) private delegate;
-    uint256 private proposalCount;
+    uint256 public proposalCount;
     IERC721 private markkinatNFT;
-    uint256 private idsAllowedToVoted = 100;
+    uint256 public idsAllowedToVoted = 100;
     mapping(uint256 => mapping(uint256 => bool)) private tokenVoted;
     mapping(uint256 => mapping(uint256 => bool)) private delegatedBefore;
     mapping(uint256 => mapping(address => bool)) private delegatedTo;
