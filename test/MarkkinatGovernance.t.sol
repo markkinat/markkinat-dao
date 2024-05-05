@@ -66,7 +66,7 @@ contract MarkkinatNFTTest is Test {
         vm.expectRevert("Already voted on this proposal");
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 4);
 
-        (, string memory name,, address _creator, uint256 forProps,,,, uint256 total, bool executed) =
+        (,,,, uint256 forProps,,,, uint256 total,) =
             markkinatGovernance.proposals(1);
         assertEq(forProps, 1);
         assertEq(total, 1);
