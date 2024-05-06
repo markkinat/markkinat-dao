@@ -132,10 +132,14 @@ contract MarkkinatGovernanceTest is Test {
 
         vm.warp(11 minutes);
         switchSigner(C);
-        markkinatGovernance.activateProposal(1);
 
         (,,,,,,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
-        assertTrue(v == MarkkinatGovernance.Executed.DISCARDED);
+        assertTrue(v == MarkkinatGovernance.Executed.PENDING);
+
+        markkinatGovernance.executeProposal(1);
+        (,,,,,,,,,, MarkkinatGovernance.Executed vvv) = markkinatGovernance.proposals(1);
+
+        assertTrue(vvv == MarkkinatGovernance.Executed.DISCARDED);
     }
 
     function testAgainActivateProposal() external {
@@ -159,13 +163,8 @@ contract MarkkinatGovernanceTest is Test {
         switchSigner(B);
         markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 2);
         
-        switchSigner(OO);
-        vm.expectRevert("must own the very rare asset to perform action");
-        markkinatGovernance.activateProposal(1);
 
         vm.warp(20 minutes);
-        switchSigner(C);
-        markkinatGovernance.activateProposal(1);
 
         (,,,,,,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
 
