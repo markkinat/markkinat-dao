@@ -141,19 +141,15 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         } else {
             proposal.votes++;
         }
-        //        proposal.voter[_tokenId] = true;
-        emit VotedSuccessfully(proposalId, msg.sender, decision);
-    }
 
-    function activateProposal(uint256 proposalId) external onlyNftHolder inactiveProposalOnly(proposalId) {
-        Proposal storage proposal = proposals[proposalId];
         if (
-            proposal.forProposal >= quorum && proposal.forProposal > proposal.againstProposal
+            proposal.votes >= quorum && proposal.forProposal > proposal.againstProposal
                 && proposal.forProposal > proposal.abstainProposal
         ){
             proposal.executed = Executed.ACTIVE;
-        }
-        else proposal.executed = Executed.DISCARDED;
+        } else proposal.executed = Executed.DISCARDED;
+
+        emit VotedSuccessfully(proposalId, msg.sender, decision);
     }
 
     // @dev: this is yet to be decided fully on what the decision of what need to be done.
@@ -165,7 +161,9 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
             proposal.isExecuted = true;
             proposal.executed = Executed.EXECUTED;
         }
-        else revert("proposal not activated.");
+        else {
+            proposal.executed = Executed.DISCARDED;
+        }
     }
 
     function delegateVotingPower(address _delegate, uint256 _tokenId, uint256 proposalId)
