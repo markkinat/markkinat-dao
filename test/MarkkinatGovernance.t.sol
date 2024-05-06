@@ -32,7 +32,7 @@ contract MarkkinatGovernanceTest is Test {
     function testCreateProposal() external {
         runOwnerDuty();
 
-        markkinatGovernance.createProposal("name", (3 minutes), "desc");
+        markkinatGovernance.createProposal(owner, "name", (3 minutes), "desc");
         (, string memory name,, address _creator,,,,,, bool executed, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
         console.log("result is ", name);
         assertEq(name, "name");
@@ -45,50 +45,51 @@ contract MarkkinatGovernanceTest is Test {
         runOwnerDuty();
         markkinatNFT.startPresale();
 
-        switchSigner(B);
+        // switchSigner(B);
         vm.warp(5.5 minutes);
         markkinatNFT.mint{value: 0.01 ether}();
         vm.expectRevert("must own the very rare asset to perform action");
-        markkinatGovernance.createProposal("name", 1 minutes, "desc");
+        markkinatGovernance.createProposal(B, "name", 1 minutes, "desc");
     }
 
     function testDeadLineMustBeGreaterThanCurrentTime() external {
         runOwnerDuty();
         vm.warp(10 minutes);
         vm.expectRevert("Deadline must be greater than current time");
-        markkinatGovernance.createProposal("name", 5 minutes, "desc");
+        markkinatGovernance.createProposal(owner, "name", 5 minutes, "desc");
     }
 
     function testVoteOnProposal() external {
         transferAssets();
-        switchSigner(B);
-        markkinatGovernance.createProposal("name", 10 minutes, "desc");
+        // switchSigner(B);
+        markkinatGovernance.createProposal(B,"name", 10 minutes, "desc");
 
-        switchSigner(C);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 3);
+        // switchSigner(C);
+        markkinatGovernance.voteOnProposal(C,1, MarkkinatLibrary.VoterDecision.For, 3);
+
         vm.expectRevert("Already voted on this proposal");
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 4);
+        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.Against, 3);
 
         (,,,, uint256 forProps,,,, uint256 total,,) =
             markkinatGovernance.proposals(1);
-        assertEq(forProps, 1);
+        assertEq(forProps, 5);
         assertEq(total, 1);
     }
 
     function testVoteOnDifferentProposals() external {
         transferAssets();
-        switchSigner(B);
-        markkinatGovernance.createProposal("name", 10 minutes, "desc");
-        markkinatGovernance.createProposal("name1", 10 minutes, "desc");
+        // switchSigner(B);
+        markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
+        markkinatGovernance.createProposal(B, "name1", 10 minutes, "desc");
 
-        switchSigner(C);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 3);
-        markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 3);
+        // switchSigner(C);
+        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.Against, 3);
+        markkinatGovernance.voteOnProposal(C, 2, MarkkinatLibrary.VoterDecision.Against, 3);
 
-        switchSigner(D);
-        markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 4);
-        switchSigner(E);
-        markkinatGovernance.voteOnProposal(2, MarkkinatLibrary.VoterDecision.Against, 5);
+        // switchSigner(D);
+        markkinatGovernance.voteOnProposal(D, 2, MarkkinatLibrary.VoterDecision.Against, 4);
+        // switchSigner(E);
+        markkinatGovernance.voteOnProposal(E, 2, MarkkinatLibrary.VoterDecision.Against, 5);
 
         (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
         (,,,,, uint256 against,,, uint256 total1,,) = markkinatGovernance.proposals(2);
@@ -96,39 +97,39 @@ contract MarkkinatGovernanceTest is Test {
         assertEq(forProps, 0);
         assertEq(total, 1);
 
-        assertEq(against, 3);
+        assertEq(against, 15);
         assertEq(total1, 3);
     }
 
     function testDelegateVotingPower() external {
         transferAssets();
 
-        switchSigner(B);
-        markkinatGovernance.createProposal("name", 5 minutes, "desc");
+        // switchSigner(B);
+        markkinatGovernance.createProposal(B, "name", 5 minutes, "desc");
 
-        switchSigner(C);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 3);
+        // switchSigner(C);
+        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.For, 3);
 
-        switchSigner(D);
+        // switchSigner(D);
         vm.expectRevert("Already voted cannot accept delegate vote");
-        markkinatGovernance.delegateVotingPower(C, 4, 1);
+        markkinatGovernance.delegateVotingPower(D, C, 4, 1);
 
-        markkinatGovernance.delegateVotingPower(E, 4, 1);
+        markkinatGovernance.delegateVotingPower(D, E, 4, 1);
 
-        switchSigner(E);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 5);
+        // switchSigner(E);
+        markkinatGovernance.voteOnProposal(E, 1, MarkkinatLibrary.VoterDecision.Against, 5);
 
         (,,,, uint256 forProps, uint256 against,,, uint256 total,,) = markkinatGovernance.proposals(1);
 
-        assertEq(forProps, 1);
-        assertEq(against, 2);
+        assertEq(forProps, 5);
+        assertEq(against, 10);
         assertEq(total, 3);
     }
 
     function testActivateProposal() external {
         transferAssets();
-        switchSigner(B);
-        markkinatGovernance.createProposal("name", 5 minutes, "desc");
+        // switchSigner(B);
+        markkinatGovernance.createProposal(B, "name", 5 minutes, "desc");
 
         vm.warp(11 minutes);
         switchSigner(C);
@@ -136,10 +137,58 @@ contract MarkkinatGovernanceTest is Test {
         (,,,,,,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
         assertTrue(v == MarkkinatGovernance.Executed.PENDING);
 
-        markkinatGovernance.executeProposal(1);
+        markkinatGovernance.executeProposal(C, 1);
         (,,,,,,,,,, MarkkinatGovernance.Executed vvv) = markkinatGovernance.proposals(1);
 
         assertTrue(vvv == MarkkinatGovernance.Executed.DISCARDED);
+    }
+
+    function testDelegateVotingPowerA() external {
+        switchSigner(owner);
+        markkinatNFT.startPresale();
+        transferAssets();
+
+        vm.warp(6 minutes);
+        switchSigner(OO);
+        markkinatNFT.mint{value: 0.02 ether}();
+        
+        // switchSigner(B);
+        markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
+
+        // switchSigner(OO);
+        markkinatGovernance.delegateVotingPower(OO, C, 21, 1);
+
+        // switchSigner(C);
+        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.For, 3);
+
+        (,,,, uint256 forProps, ,,, uint256 total,,) = markkinatGovernance.proposals(1);
+
+        assertEq(forProps, 6);
+        assertEq(total, 2);
+    }
+
+    function testDelegateVotePower() external {
+        switchSigner(owner);
+        markkinatNFT.startPresale();
+        transferAssets();
+
+        vm.warp(6 minutes);
+        switchSigner(OO);
+        markkinatNFT.mint{value: 0.02 ether}();
+        
+        // switchSigner(B);
+        markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
+
+        switchSigner(C);
+        markkinatGovernance.delegateVotingPower(C, OO, 3, 1);
+
+        switchSigner(OO);
+        markkinatGovernance.voteOnProposal(OO, 1, MarkkinatLibrary.VoterDecision.For, 21);
+
+        (,,,, uint256 forProps, ,,, uint256 total,,) = markkinatGovernance.proposals(1);
+
+        assertEq(forProps, 6);
+        assertEq(total, 2);
     }
 
     function testAgainActivateProposal() external {
@@ -151,29 +200,44 @@ contract MarkkinatGovernanceTest is Test {
         switchSigner(OO);
         markkinatNFT.mint{value: 0.02 ether}();
         
-        switchSigner(B);
-        markkinatGovernance.createProposal("name", 10 minutes, "desc");
+        // switchSigner(B);
+        markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
 
-        switchSigner(D);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 4);
-        switchSigner(OO);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 21);
-        switchSigner(E);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.Against, 5);
-        switchSigner(B);
-        markkinatGovernance.voteOnProposal(1, MarkkinatLibrary.VoterDecision.For, 2);
+        // switchSigner(D);
+        markkinatGovernance.voteOnProposal(D, 1, MarkkinatLibrary.VoterDecision.For, 4);
+        // switchSigner(OO);
+        markkinatGovernance.voteOnProposal(OO, 1, MarkkinatLibrary.VoterDecision.For, 21);
+        // switchSigner(E);
+        markkinatGovernance.voteOnProposal(E, 1, MarkkinatLibrary.VoterDecision.Against, 5);
+        // switchSigner(B);
+        markkinatGovernance.voteOnProposal(B, 1, MarkkinatLibrary.VoterDecision.For, 2);
         
-
         vm.warp(20 minutes);
 
-        (,,,,,,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
+        (,,,,uint forPropos,uint againstProps,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
 
         assertTrue(v == MarkkinatGovernance.Executed.ACTIVE);
 
-        switchSigner(C);
-        markkinatGovernance.executeProposal(1);
+        assertEq(forPropos, 11);
+        assertEq(againstProps, 5);
+
+        // switchSigner(C);
+        markkinatGovernance.executeProposal(C, 1);
         (,,,,,,,,,, MarkkinatGovernance.Executed vv) = markkinatGovernance.proposals(1);
         assertTrue(vv == MarkkinatGovernance.Executed.EXECUTED);
+    }
+
+    function testWithOtherNFTHolders() external {
+        switchSigner(owner);
+        markkinatNFT.startPresale();
+        transferAssets();
+
+        vm.warp(6 minutes);
+        switchSigner(OO);
+        markkinatNFT.mint{value: 0.02 ether}();
+
+        switchSigner(B);
+        markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
     }
 
     function runOwnerDuty() private {
