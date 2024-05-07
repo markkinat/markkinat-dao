@@ -7,12 +7,13 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "src/libraries/MarkkinatLibrary.sol";
 
 contract MarkkinatGovernance is Ownable, ReentrancyGuard {
-    enum Executed{
+    enum Executed {
         PENDING,
         DISCARDED,
         ACTIVE,
         EXECUTED
     }
+
     struct Proposal {
         uint256 proposalId;
         string name;
@@ -88,7 +89,10 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
 
     // TODO: create a proposal
     // @dev: there is a need to take an extra argument which is to perform the action of the marketPlace contract...
-    function createProposal(address intiator,string memory _name, uint256 _deadLine, string memory desc) external onlyNftHolder(intiator) {
+    function createProposal(address intiator, string memory _name, uint256 _deadLine, string memory desc)
+        external
+        onlyNftHolder(intiator)
+    {
         require(bytes(_name).length > 0, "Proposal name cannot be empty");
         require(bytes(desc).length > 0, "Proposal description cannot be empty");
         require(_deadLine > block.timestamp, "Deadline must be greater than current time");
@@ -105,19 +109,15 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
 
     // TODO: user decision on the Proposal created.
     // @dev: there is need to change the weight of votes which will be gotten from the Asset contract
-    function voteOnProposal(address intiator,uint256 proposalId, MarkkinatLibrary.VoterDecision decision, uint256 _tokenId)
-        external
-        activeProposalOnly(proposalId)
-        tokenIdAllowedToVote(_tokenId, proposalId, intiator)
-        nonReentrant
-    {
+    function voteOnProposal(
+        address intiator,
+        uint256 proposalId,
+        MarkkinatLibrary.VoterDecision decision,
+        uint256 _tokenId
+    ) external activeProposalOnly(proposalId) tokenIdAllowedToVote(_tokenId, proposalId, intiator) nonReentrant {
         // Check if voter has already voted on this proposal (combined check)
-        require(
-            !tokenVoted[proposalId][_tokenId] && !hasVoted[proposalId][intiator], "Already voted on this proposal"
-        );
-        require(
-            !hasDeletedPower[proposalId][intiator], "Already delegated Vote power"
-        );
+        require(!tokenVoted[proposalId][_tokenId] && !hasVoted[proposalId][intiator], "Already voted on this proposal");
+        require(!hasDeletedPower[proposalId][intiator], "Already delegated Vote power");
 
         Proposal storage proposal = proposals[proposalId];
         bool isDelegated = delegatedTo[proposalId][intiator];
@@ -152,27 +152,30 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         if (
             proposal.totalVoters >= quorum && proposal.forProposal > proposal.againstProposal
                 && proposal.forProposal > proposal.abstainProposal
-        ){
+        ) {
             proposal.executed = Executed.ACTIVE;
-        } else proposal.executed = Executed.DISCARDED;
+        } else {
+            proposal.executed = Executed.DISCARDED;
+        }
 
         emit VotedSuccessfully(proposalId, intiator, decision);
     }
 
-    function getAssetVotingPower(uint256 _tokenId) private pure returns(uint power){
-        power = _tokenId > 0 ? _tokenId <= 20 ? 5 : 1 : 0; 
+    function getAssetVotingPower(uint256 _tokenId) private pure returns (uint256 power) {
+        power = _tokenId > 0 ? _tokenId <= 20 ? 5 : 1 : 0;
     }
 
     // @dev: this is yet to be decided fully on what the decision of what need to be done.
-    function executeProposal(address intiator, uint256 proposalId) external onlyNftHolder(intiator) inactiveProposalOnly(proposalId) {
+    function executeProposal(address intiator, uint256 proposalId)
+        external
+        onlyNftHolder(intiator)
+        inactiveProposalOnly(proposalId)
+    {
         Proposal storage proposal = proposals[proposalId];
-        if (
-            !proposal.isExecuted && proposal.executed == Executed.ACTIVE
-        ) {
+        if (!proposal.isExecuted && proposal.executed == Executed.ACTIVE) {
             proposal.isExecuted = true;
             proposal.executed = Executed.EXECUTED;
-        }
-        else {
+        } else {
             proposal.executed = Executed.DISCARDED;
         }
     }
