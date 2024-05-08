@@ -33,7 +33,8 @@ contract MarkkinatGovernanceTest is Test {
         runOwnerDuty();
 
         markkinatGovernance.createProposal(owner, "name", (3 minutes), "desc");
-        (, string memory name,, address _creator,,,,,, bool executed, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
+        (, string memory name,, address _creator,,,,,, bool executed, MarkkinatGovernance.Executed v) =
+            markkinatGovernance.proposals(1);
         console.log("result is ", name);
         assertEq(name, "name");
         assertTrue(v == MarkkinatGovernance.Executed.PENDING);
@@ -62,16 +63,15 @@ contract MarkkinatGovernanceTest is Test {
     function testVoteOnProposal() external {
         transferAssets();
         // switchSigner(B);
-        markkinatGovernance.createProposal(B,"name", 10 minutes, "desc");
+        markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
 
         // switchSigner(C);
-        markkinatGovernance.voteOnProposal(C,1, MarkkinatLibrary.VoterDecision.For, 3);
+        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.For, 3);
 
         vm.expectRevert("Already voted on this proposal");
         markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.Against, 3);
 
-        (,,,, uint256 forProps,,,, uint256 total,,) =
-            markkinatGovernance.proposals(1);
+        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
         assertEq(forProps, 5);
         assertEq(total, 1);
     }
@@ -151,7 +151,7 @@ contract MarkkinatGovernanceTest is Test {
         vm.warp(6 minutes);
         switchSigner(OO);
         markkinatNFT.mint{value: 0.02 ether}();
-        
+
         // switchSigner(B);
         markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
 
@@ -161,7 +161,7 @@ contract MarkkinatGovernanceTest is Test {
         // switchSigner(C);
         markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.For, 3);
 
-        (,,,, uint256 forProps, ,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
 
         assertEq(forProps, 6);
         assertEq(total, 2);
@@ -175,7 +175,7 @@ contract MarkkinatGovernanceTest is Test {
         vm.warp(6 minutes);
         switchSigner(OO);
         markkinatNFT.mint{value: 0.02 ether}();
-        
+
         // switchSigner(B);
         markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
 
@@ -185,7 +185,7 @@ contract MarkkinatGovernanceTest is Test {
         switchSigner(OO);
         markkinatGovernance.voteOnProposal(OO, 1, MarkkinatLibrary.VoterDecision.For, 21);
 
-        (,,,, uint256 forProps, ,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
 
         assertEq(forProps, 6);
         assertEq(total, 2);
@@ -199,7 +199,7 @@ contract MarkkinatGovernanceTest is Test {
         vm.warp(6 minutes);
         switchSigner(OO);
         markkinatNFT.mint{value: 0.02 ether}();
-        
+
         // switchSigner(B);
         markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
 
@@ -211,10 +211,11 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.voteOnProposal(E, 1, MarkkinatLibrary.VoterDecision.Against, 5);
         // switchSigner(B);
         markkinatGovernance.voteOnProposal(B, 1, MarkkinatLibrary.VoterDecision.For, 2);
-        
+
         vm.warp(20 minutes);
 
-        (,,,,uint forPropos,uint againstProps,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
+        (,,,, uint256 forPropos, uint256 againstProps,,,,, MarkkinatGovernance.Executed v) =
+            markkinatGovernance.proposals(1);
 
         assertTrue(v == MarkkinatGovernance.Executed.ACTIVE);
 
