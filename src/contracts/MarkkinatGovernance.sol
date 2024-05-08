@@ -43,9 +43,9 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) private delegatedVote;
     mapping(uint256 => mapping(address => bool)) private hasDeletedPower;
 
-    event ProposalCreated(uint256 indexed, address indexed);
-    event VotedSuccessfully(uint256 indexed, address, MarkkinatLibrary.VoterDecision);
-    event DelegatedVotingPowerSuccessfully(address, uint256, address);
+    event ProposalCreated(uint256, address indexed);
+    event VotedSuccessfully(uint256, address indexed, MarkkinatLibrary.VoterDecision indexed);
+    event DelegatedVotingPowerSuccessfully(address indexed, uint256, address);
 
     constructor(address nftAddress, uint16 _quorum, address initialOwner) payable Ownable(initialOwner) {
         quorum = _quorum;
