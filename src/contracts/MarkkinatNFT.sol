@@ -11,7 +11,7 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      * token will be the concatenation of the `baseURI` and the `tokenId`.
      */
     string _baseTokenURI;
-    uint256 private tokenIds;
+    uint256 public tokenIds;
 
     //  _price is the price of one Markkinat Dev NFT
     uint256 public _price = 0.01 ether;
@@ -31,7 +31,10 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
     // _paused is used to pause the contract in case of an emergency
     bool public _paused;
 
-    constructor(string memory baseURI, address initialOwner) ERC721("Markkinat DAO", "MKNDAO") Ownable(initialOwner) {
+    constructor(
+        string memory baseURI,
+        address initialOwner
+    ) ERC721("Markkinat DAO", "MKNDAO") Ownable(initialOwner) {
         _baseTokenURI = baseURI;
     }
 
@@ -50,8 +53,14 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      */
     function presaleMint() public payable onlyWhenNotPaused {
         require(nftReserved, "Markkinat not reserved");
-        require(presaleStarted && block.timestamp < presaleEnded, "Presale is not running");
-        require(tokenIds < maxTokenIds, "Exceeded maximum Markkinat Collection supply");
+        require(
+            presaleStarted && block.timestamp < presaleEnded,
+            "Presale is not running"
+        );
+        require(
+            tokenIds < maxTokenIds,
+            "Exceeded maximum Markkinat Collection supply"
+        );
         require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
         //_safeMint is a safer version of the _mint function as it ensures that
@@ -68,7 +77,7 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
         for (i = 1; i < 21; i++) {
             _safeMint(msg.sender, i);
         }
-        tokenIds = 20;
+        tokenIds = 21;
         nftReserved = true;
     }
 
@@ -77,7 +86,10 @@ contract MarkkinatNFT is Ownable, ERC721URIStorage {
      */
     function mint() public payable onlyWhenNotPaused {
         require(nftReserved, "Markkinat not reserved");
-        require(presaleStarted && block.timestamp >= presaleEnded, "Presale has not ended yet");
+        require(
+            presaleStarted && block.timestamp >= presaleEnded,
+            "Presale has not ended yet"
+        );
         require(tokenIds < maxTokenIds, "Exceed maximum Markkinat Devs supply");
         require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
