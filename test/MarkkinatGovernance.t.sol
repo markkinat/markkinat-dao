@@ -20,7 +20,11 @@ contract MarkkinatGovernanceTest is Test {
 
     function setUp() public {
         markkinatNFT = new MarkkinatNFT("baseURI", owner);
-        markkinatGovernance = new MarkkinatGovernance(address(markkinatNFT), 3, owner);
+        markkinatGovernance = new MarkkinatGovernance(
+            address(markkinatNFT),
+            3,
+            owner
+        );
         fundUserEth(owner);
         fundUserEth(B);
         fundUserEth(C);
@@ -33,8 +37,19 @@ contract MarkkinatGovernanceTest is Test {
         runOwnerDuty();
 
         markkinatGovernance.createProposal(owner, "name", (3 minutes), "desc");
-        (, string memory name,, address _creator,,,,,, bool executed, MarkkinatGovernance.Executed v) =
-            markkinatGovernance.proposals(1);
+        (
+            ,
+            string memory name,
+            ,
+            address _creator,
+            ,
+            ,
+            ,
+            ,
+            ,
+            bool executed,
+            MarkkinatGovernance.Executed v
+        ) = markkinatGovernance.proposals(1);
         console.log("result is ", name);
         assertEq(name, "name");
         assertTrue(v == MarkkinatGovernance.Executed.PENDING);
@@ -66,12 +81,34 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
 
         // switchSigner(C);
-        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.For, 3);
+        markkinatGovernance.voteOnProposal(
+            C,
+            1,
+            MarkkinatLibrary.VoterDecision.For,
+            3
+        );
 
         vm.expectRevert("Already voted on this proposal");
-        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.Against, 3);
+        markkinatGovernance.voteOnProposal(
+            C,
+            1,
+            MarkkinatLibrary.VoterDecision.Against,
+            3
+        );
 
-        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            uint256 forProps,
+            ,
+            ,
+            ,
+            uint256 total,
+            ,
+
+        ) = markkinatGovernance.proposals(1);
         assertEq(forProps, 5);
         assertEq(total, 1);
     }
@@ -83,16 +120,60 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.createProposal(B, "name1", 10 minutes, "desc");
 
         // switchSigner(C);
-        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.Against, 3);
-        markkinatGovernance.voteOnProposal(C, 2, MarkkinatLibrary.VoterDecision.Against, 3);
+        markkinatGovernance.voteOnProposal(
+            C,
+            1,
+            MarkkinatLibrary.VoterDecision.Against,
+            3
+        );
+        markkinatGovernance.voteOnProposal(
+            C,
+            2,
+            MarkkinatLibrary.VoterDecision.Against,
+            3
+        );
 
         // switchSigner(D);
-        markkinatGovernance.voteOnProposal(D, 2, MarkkinatLibrary.VoterDecision.Against, 4);
+        markkinatGovernance.voteOnProposal(
+            D,
+            2,
+            MarkkinatLibrary.VoterDecision.Against,
+            4
+        );
         // switchSigner(E);
-        markkinatGovernance.voteOnProposal(E, 2, MarkkinatLibrary.VoterDecision.Against, 5);
+        markkinatGovernance.voteOnProposal(
+            E,
+            2,
+            MarkkinatLibrary.VoterDecision.Against,
+            5
+        );
 
-        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
-        (,,,,, uint256 against,,, uint256 total1,,) = markkinatGovernance.proposals(2);
+        (
+            ,
+            ,
+            ,
+            ,
+            uint256 forProps,
+            ,
+            ,
+            ,
+            uint256 total,
+            ,
+
+        ) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            uint256 against,
+            ,
+            ,
+            uint256 total1,
+            ,
+
+        ) = markkinatGovernance.proposals(2);
 
         assertEq(forProps, 0);
         assertEq(total, 1);
@@ -108,7 +189,12 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.createProposal(B, "name", 5 minutes, "desc");
 
         // switchSigner(C);
-        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.For, 3);
+        markkinatGovernance.voteOnProposal(
+            C,
+            1,
+            MarkkinatLibrary.VoterDecision.For,
+            3
+        );
 
         // switchSigner(D);
         vm.expectRevert("Already voted cannot accept delegate vote");
@@ -117,9 +203,26 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.delegateVotingPower(D, E, 4, 1);
 
         // switchSigner(E);
-        markkinatGovernance.voteOnProposal(E, 1, MarkkinatLibrary.VoterDecision.Against, 5);
+        markkinatGovernance.voteOnProposal(
+            E,
+            1,
+            MarkkinatLibrary.VoterDecision.Against,
+            5
+        );
 
-        (,,,, uint256 forProps, uint256 against,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            uint256 forProps,
+            uint256 against,
+            ,
+            ,
+            uint256 total,
+            ,
+
+        ) = markkinatGovernance.proposals(1);
 
         assertEq(forProps, 5);
         assertEq(against, 10);
@@ -134,11 +237,35 @@ contract MarkkinatGovernanceTest is Test {
         vm.warp(11 minutes);
         switchSigner(C);
 
-        (,,,,,,,,,, MarkkinatGovernance.Executed v) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            MarkkinatGovernance.Executed v
+        ) = markkinatGovernance.proposals(1);
         assertTrue(v == MarkkinatGovernance.Executed.PENDING);
 
         markkinatGovernance.executeProposal(C, 1);
-        (,,,,,,,,,, MarkkinatGovernance.Executed vvv) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            MarkkinatGovernance.Executed vvv
+        ) = markkinatGovernance.proposals(1);
 
         assertTrue(vvv == MarkkinatGovernance.Executed.DISCARDED);
     }
@@ -159,9 +286,26 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.delegateVotingPower(OO, C, 21, 1);
 
         // switchSigner(C);
-        markkinatGovernance.voteOnProposal(C, 1, MarkkinatLibrary.VoterDecision.For, 3);
+        markkinatGovernance.voteOnProposal(
+            C,
+            1,
+            MarkkinatLibrary.VoterDecision.For,
+            3
+        );
 
-        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            uint256 forProps,
+            ,
+            ,
+            ,
+            uint256 total,
+            ,
+
+        ) = markkinatGovernance.proposals(1);
 
         assertEq(forProps, 6);
         assertEq(total, 2);
@@ -183,9 +327,26 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.delegateVotingPower(C, OO, 3, 1);
 
         switchSigner(OO);
-        markkinatGovernance.voteOnProposal(OO, 1, MarkkinatLibrary.VoterDecision.For, 21);
+        markkinatGovernance.voteOnProposal(
+            OO,
+            1,
+            MarkkinatLibrary.VoterDecision.For,
+            21
+        );
 
-        (,,,, uint256 forProps,,,, uint256 total,,) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            uint256 forProps,
+            ,
+            ,
+            ,
+            uint256 total,
+            ,
+
+        ) = markkinatGovernance.proposals(1);
 
         assertEq(forProps, 6);
         assertEq(total, 2);
@@ -204,18 +365,49 @@ contract MarkkinatGovernanceTest is Test {
         markkinatGovernance.createProposal(B, "name", 10 minutes, "desc");
 
         // switchSigner(D);
-        markkinatGovernance.voteOnProposal(D, 1, MarkkinatLibrary.VoterDecision.For, 4);
+        markkinatGovernance.voteOnProposal(
+            D,
+            1,
+            MarkkinatLibrary.VoterDecision.For,
+            4
+        );
         // switchSigner(OO);
-        markkinatGovernance.voteOnProposal(OO, 1, MarkkinatLibrary.VoterDecision.For, 21);
+        markkinatGovernance.voteOnProposal(
+            OO,
+            1,
+            MarkkinatLibrary.VoterDecision.For,
+            21
+        );
         // switchSigner(E);
-        markkinatGovernance.voteOnProposal(E, 1, MarkkinatLibrary.VoterDecision.Against, 5);
+        markkinatGovernance.voteOnProposal(
+            E,
+            1,
+            MarkkinatLibrary.VoterDecision.Against,
+            5
+        );
         // switchSigner(B);
-        markkinatGovernance.voteOnProposal(B, 1, MarkkinatLibrary.VoterDecision.For, 2);
+        markkinatGovernance.voteOnProposal(
+            B,
+            1,
+            MarkkinatLibrary.VoterDecision.For,
+            2
+        );
 
         vm.warp(20 minutes);
 
-        (,,,, uint256 forPropos, uint256 againstProps,,,,, MarkkinatGovernance.Executed v) =
-            markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            uint256 forPropos,
+            uint256 againstProps,
+            ,
+            ,
+            ,
+            ,
+            MarkkinatGovernance.Executed v
+        ) = markkinatGovernance.proposals(1);
 
         assertTrue(v == MarkkinatGovernance.Executed.ACTIVE);
 
@@ -224,7 +416,19 @@ contract MarkkinatGovernanceTest is Test {
 
         // switchSigner(C);
         markkinatGovernance.executeProposal(C, 1);
-        (,,,,,,,,,, MarkkinatGovernance.Executed vv) = markkinatGovernance.proposals(1);
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            MarkkinatGovernance.Executed vv
+        ) = markkinatGovernance.proposals(1);
         assertTrue(vv == MarkkinatGovernance.Executed.EXECUTED);
     }
 
@@ -265,7 +469,9 @@ contract MarkkinatGovernanceTest is Test {
     }
 
     function mkaddr(string memory name) public returns (address) {
-        address addr = address(uint160(uint256(keccak256(abi.encodePacked(name)))));
+        address addr = address(
+            uint160(uint256(keccak256(abi.encodePacked(name))))
+        );
         vm.label(addr, name);
         return addr;
     }
