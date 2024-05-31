@@ -44,7 +44,11 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         private delegatedVote;
     mapping(uint256 => mapping(address => bool)) private hasDeletedPower;
 
-    event ProposalCreated(uint256 proposalId, address indexed initiator);
+    event ProposalCreated(
+        uint256 proposalId,
+        address indexed initiator,
+        uint256 indexed time
+    );
     event VotedSuccessfully(
         uint256 proposalId,
         address indexed decider,
@@ -137,10 +141,10 @@ contract MarkkinatGovernance is Ownable, ReentrancyGuard {
         proposal.creator = intiator;
         proposal.name = _name;
         proposal.description = desc;
-        proposal.deadLine = block.timestamp + _deadLine;
+        proposal.deadLine = _deadLine;
 
         proposalCount++;
-        emit ProposalCreated(proposalId, intiator);
+        emit ProposalCreated(proposalId, intiator, block.timestamp);
     }
 
     // TODO: user decision on the Proposal created.
